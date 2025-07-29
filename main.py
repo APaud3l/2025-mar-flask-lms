@@ -7,6 +7,7 @@ from controllers.cli_controller import db_commands
 from controllers.student_controller import student_bp
 from controllers.teacher_controller import teacher_bp
 from controllers.course_controller import course_bp
+from controllers.enrolment_controller import enrolment_bp
 from init import db
 
 load_dotenv()
@@ -24,6 +25,7 @@ def create_app():
     app.register_blueprint(student_bp)
     app.register_blueprint(teacher_bp)
     app.register_blueprint(course_bp)
+    app.register_blueprint(enrolment_bp)
 
     return app
 
