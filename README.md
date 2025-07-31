@@ -51,10 +51,37 @@ To run the server successfully, here are the steps you need to perform:
 
 ## API Endpoints
 
-Endpoint                  Methods     Rule                      
-------------------------  ----------  --------------------------
-student.create_a_student  POST        /students/                
-student.delete_student    DELETE      /students/<int:student_id>
-student.get_a_student     GET         /students/<int:student_id>
-student.get_students      GET         /students/                
-student.update_student    PATCH, PUT  /students/<int:student_id>
+Endpoint                     | Methods    | Rule                          
+---------------------------- | ---------- | ------------------------------
+course.create_a_course       | POST       | /courses/                     
+course.delete_course         | DELETE     | /courses/<int:course_id>      
+course.get_a_course          | GET        | /courses/<int:course_id>      
+course.get_courses           | GET        | /courses/                     
+course.update_course         | PATCH, PUT | /courses/<int:course_id>      
+enrolment.create_a_enrolment | POST       | /enrolments/                  
+enrolment.delete_enrolment   | DELETE     | /enrolments/<int:enrolment_id>
+enrolment.get_a_enrolment    | GET        | /enrolments/<int:enrolment_id>
+enrolment.get_enrolments     | GET        | /enrolments/                  
+enrolment.update_enrolment   | PATCH, PUT | /enrolments/<int:enrolment_id>
+student.create_a_student     | POST       | /students/                    
+student.delete_student       | DELETE     | /students/<int:student_id>    
+student.get_a_student        | GET        | /students/<int:student_id>    
+student.get_students         | GET        | /students/                    
+student.update_student       | PATCH, PUT | /students/<int:student_id>    
+teacher.create_a_teacher     | POST       | /teachers/                    
+teacher.delete_teacher       | DELETE     | /teachers/<int:teacher_id>    
+teacher.get_a_teacher        | GET        | /teachers/<int:teacher_id>    
+teacher.get_teachers         | GET        | /teachers/                    
+teacher.update_teacher       | PATCH, PUT | /teachers/<int:teacher_id> 
+
+
+
+
+
+
+
+
+
+
+
+
