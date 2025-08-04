@@ -101,8 +101,8 @@ def delete_enrolment(enrolment_id):
         return {"message": f"Enrolment with id '{enrolment_id}' does not exist"}, 404
     
 # UPDATE /enrolments/id
-# @enrolment_bp.route("/<int:enrolment_id>", methods=["PUT", "PATCH"])
-# def update_enrolment(enrolment_id):
+@enrolment_bp.route("/<int:enrolment_id>", methods=["PUT", "PATCH"])
+def update_enrolment(enrolment_id):
     # Get the enrolment with id
     stmt = db.select(Enrolment).where(Enrolment.id == enrolment_id)
     enrolment = db.session.scalar(stmt)
@@ -111,9 +111,9 @@ def delete_enrolment(enrolment_id):
         # get the data to be updated
         body_data = request.get_json()
         # make changes
-        enrolment.name = body_data.get("name") or enrolment.name
-        enrolment.email = body_data.get("email") or enrolment.email
-        enrolment.address = body_data.get("address") or enrolment.address
+        enrolment.enrolment_date = body_data.get("enrolment_date") or enrolment.enrolment_date
+        enrolment.student_id = body_data.get("student_id") or enrolment.student_id
+        enrolment.course_id = body_data.get("course_id") or enrolment.course_id
         # commit
         db.session.commit()
         # return
