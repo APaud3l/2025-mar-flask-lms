@@ -46,50 +46,63 @@ def get_a_course(course_id):
     else:
         return {"message": f"Course with id {course_id} does not exist."}, 404
 
-# POST /
+# POST / with error handling in the controller
+# @course_bp.route("/", methods=["POST"])
+# def create_a_course():
+#     try:
+#         # # GET info from the REQUEST body
+#         # body_data = request.get_json()
+
+#         # # Create a Course Object from Course class with body response data
+#         # new_course = Course(
+#         #     name = body_data.get("name"),
+#         #     duration = body_data.get("duration"),
+#         #     teacher_id = body_data.get("teacher_id")
+#         # )
+
+#         # # Add the new course data to the session
+#         # db.session.add(new_course)
+        
+#         # # Commit the session
+#         # db.session.commit()
+
+#         new_course = course_schema.load(
+#             request.get_json(),
+#             session = db.session
+#         )
+#         # Add the new course data to the session
+#         db.session.add(new_course)
+        
+#         # Commit the session
+#         db.session.commit()
+
+#         # Return
+#         return jsonify(course_schema.dump(new_course)), 201
+    
+#     except ValidationError as err:
+#         return err.messages, 400
+    
+#     except IntegrityError as err:
+#         if err.orig.pgcode == errorcodes.NOT_NULL_VIOLATION:
+#             return {"message": f"Required field {err.orig.diag.column_name} cannot be null."}, 400
+        
+#         if err.orig.pgcode == errorcodes.UNIQUE_VIOLATION:
+#             return {"message": "Course Name has to be unique"}, 400
+#         else:
+#             return {"message": "Unexpected error occured."}, 400
+
+# POST / with error handling handled by error_handler
 @course_bp.route("/", methods=["POST"])
 def create_a_course():
-    try:
-        # # GET info from the REQUEST body
-        # body_data = request.get_json()
+    body_data = request.get_json()
+    new_course = course_schema.load(
+        body_data,
+        session = db.session
+    )
+    db.session.add(new_course)
+    db.session.commit()
+    return course_schema.dump(new_course), 201
 
-        # # Create a Course Object from Course class with body response data
-        # new_course = Course(
-        #     name = body_data.get("name"),
-        #     duration = body_data.get("duration"),
-        #     teacher_id = body_data.get("teacher_id")
-        # )
-
-        # # Add the new course data to the session
-        # db.session.add(new_course)
-        
-        # # Commit the session
-        # db.session.commit()
-
-        new_course = course_schema.load(
-            request.get_json(),
-            session = db.session
-        )
-        # Add the new course data to the session
-        db.session.add(new_course)
-        
-        # Commit the session
-        db.session.commit()
-
-        # Return
-        return jsonify(course_schema.dump(new_course)), 201
-    
-    except ValidationError as err:
-        return err.messages, 400
-    
-    except IntegrityError as err:
-        if err.orig.pgcode == errorcodes.NOT_NULL_VIOLATION:
-            return {"message": f"Required field {err.orig.diag.column_name} cannot be null."}, 400
-        
-        if err.orig.pgcode == errorcodes.UNIQUE_VIOLATION:
-            return {"message": "Course Name has to be unique"}, 400
-        else:
-            return {"message": "Unexpected error occured."}, 400
 
 # DELETE /id
 @course_bp.route("/<int:course_id>", methods=["DELETE"])
