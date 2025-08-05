@@ -1,6 +1,6 @@
-from marshmallow_sqlalchemy import SQLAlchemyAutoSchema
-from marshmallow import ValidationError, fields, validates 
-from marshmallow.validate import Length, And, Regexp
+from marshmallow_sqlalchemy import SQLAlchemyAutoSchema, auto_field
+from marshmallow import ValidationError, fields, validate, validates
+from marshmallow.validate import Range, OneOf
 
 
 from models.student import Student
@@ -26,6 +26,10 @@ class TeacherSchema(SQLAlchemyAutoSchema):
         include_relationships = True
         fields = ("id", "name", "department", "address", "courses")
         ordered = True
+    
+    department = auto_field(validate=OneOf(["Science", "Management", "Engineering"],
+                            error="Only valid departments are: Science, Management, Engineering"
+                            ))
 
     courses = fields.List(fields.Nested("CourseSchema", exclude=("teacher","id",)))
 
@@ -39,6 +43,9 @@ class CourseSchema(SQLAlchemyAutoSchema):
         ordered = True
         fields = ("id","name","duration", "teacher", "enrolments")
 
+    duration = auto_field(validate=[
+        Range(min=1, error="Duration value must be at least 1.")
+    ])
 
     # @validates("property-to-validate")
     # def some_function_name(self, property-to-validate, data_key)
@@ -53,8 +60,6 @@ class CourseSchema(SQLAlchemyAutoSchema):
 	# 	Length(min=2, error="Course names must be at least 2 characters long."),
 	# 	Regexp("[A-Za-z][A-Za-z0-9 ]*$", error="Only letters, numbers, and spaces are allowed!")
 	# ))
-
-	# duration = fields.Float(allow_nan=False, required=False)
 	
     teacher = fields.Nested("TeacherSchema", only=("id","name","department"))
     enrolments = fields.List(fields.Nested("EnrolmentSchema", exclude=("course",)))

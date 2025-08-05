@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 from sqlalchemy.exc import IntegrityError, DataError
 from psycopg2 import errorcodes
+from marshmallow import ValidationError
 
 from init import db
 from models.course import Course
@@ -49,16 +50,26 @@ def get_a_course(course_id):
 @course_bp.route("/", methods=["POST"])
 def create_a_course():
     try:
-        # GET info from the REQUEST body
-        body_data = request.get_json()
+        # # GET info from the REQUEST body
+        # body_data = request.get_json()
 
-        # Create a Course Object from Course class with body response data
-        new_course = Course(
-            name = body_data.get("name"),
-            duration = body_data.get("duration"),
-            teacher_id = body_data.get("teacher_id")
+        # # Create a Course Object from Course class with body response data
+        # new_course = Course(
+        #     name = body_data.get("name"),
+        #     duration = body_data.get("duration"),
+        #     teacher_id = body_data.get("teacher_id")
+        # )
+
+        # # Add the new course data to the session
+        # db.session.add(new_course)
+        
+        # # Commit the session
+        # db.session.commit()
+
+        new_course = course_schema.load(
+            request.get_json(),
+            session = db.session
         )
-
         # Add the new course data to the session
         db.session.add(new_course)
         
@@ -67,6 +78,10 @@ def create_a_course():
 
         # Return
         return jsonify(course_schema.dump(new_course)), 201
+    
+    except ValidationError as err:
+        return err.messages, 400
+    
     except IntegrityError as err:
         if err.orig.pgcode == errorcodes.NOT_NULL_VIOLATION:
             return {"message": f"Required field {err.orig.diag.column_name} cannot be null."}, 400
@@ -97,44 +112,77 @@ def delete_course(course_id):
 # UPDATE /courses/id
 @course_bp.route("/<int:course_id>", methods=["PUT", "PATCH"])
 def update_course(course_id):
+    stmt = db.select(Course).where(Course.id == course_id)
+    course = db.session.scalar(stmt)
+
+    if not course:
+        return {"message": f"Course with id {course_id} does not exist."}, 404
+    
     try:
-        # Get the course with id
-        stmt = db.select(Course).where(Course.id == course_id)
-        course = db.session.scalar(stmt)
-        # if exists
-        if course:
-            # get the data to be updated
-            body_data = request.get_json()
-            # make changes
-            course.name = body_data.get("name") or course.name
-            course.duration = body_data.get("duration") or course.duration
-            course.teacher_id = body_data.get("teacher_id") or course.teacher_id
-
-            # validate the changes to the course 
-            validation_result = course_schema.validate(
-                {
-                    "name": course.name,
-                    "duration": course.duration
-                },
-                session=db.session
+        updated_course = course_schema.load(
+                request.get_json(),
+                instance = course,
+                session = db.session,
+                partial = True
             )
-            print(validation_result)
-            # if validation_result has truthy value,
-            # validation errors have occurred 
-            if validation_result:
-                return jsonify(validation_result), 400
-
-
-
-            # commit
-            db.session.commit()
-            # return
-            return jsonify(course_schema.dump(course))
-        # else
-        else:
-            # return with an error message
-            return {"message": f"Course with id {course_id} does not exist."}, 404
+        db.session.commit()
+        return course_schema.dump(updated_course), 200
+    
+    except ValidationError as err:
+        return err.messages, 400
     except IntegrityError:
-        return {"message": "Name must be unique"}, 400
+        return {"message": "Integrity error occured. Possible a duplicate name or invalid FK."}, 400
     except DataError as err:
         return {"message": err.orig.diag.message_primary}, 400
+
+
+
+    # try:
+    #     # Get the course with id
+    #     stmt = db.select(Course).where(Course.id == course_id)
+    #     course = db.session.scalar(stmt)
+    #     # if exists
+    #     if course:
+    #         # # get the data to be updated
+    #         # body_data = request.get_json()
+    #         # # make changes
+    #         # course.name = body_data.get("name") or course.name
+    #         # course.duration = body_data.get("duration") or course.duration
+    #         # course.teacher_id = body_data.get("teacher_id") or course.teacher_id
+
+    #         # # validate the changes to the course 
+    #         # validation_result = course_schema.validate(
+    #         #     {
+    #         #         "name": course.name,
+    #         #         "duration": course.duration
+    #         #     },
+    #         #     session=db.session
+    #         # )
+    #         # print(validation_result)
+    #         # # if validation_result has truthy value,
+    #         # # validation errors have occurred 
+    #         # if validation_result:
+    #         #     return jsonify(validation_result), 400
+
+    #         updated_course = course_schema.load(
+    #             request.get_json(),
+    #             instance = course,
+    #             session = db.session,
+    #             partial = True
+    #         )
+    #         # commit
+    #         db.session.commit()
+    #         # return
+    #         return jsonify(course_schema.dump(updated_course))
+    #     # else
+    #     else:
+    #         # return with an error message
+    #         return {"message": f"Course with id {course_id} does not exist."}, 404
+    
+    # except ValidationError as err:
+    #     return err.messages, 400
+
+    # except IntegrityError:
+    #     return {"message": "Name must be unique"}, 400
+    # except DataError as err:
+    #     return {"message": err.orig.diag.message_primary}, 400

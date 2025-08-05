@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 from sqlalchemy.exc import IntegrityError
 from psycopg2 import errorcodes
+from marshmallow import ValidationError
 
 from init import db
 from models.teacher import Teacher
@@ -57,12 +58,17 @@ def create_a_teacher():
         # GET info from the REQUEST body
         body_data = request.get_json()
 
-        # Create a Teacher Object from Teacher class with body response data
-        new_teacher = Teacher(
-            name = body_data.get("name"),
-            department = body_data.get("department"),
-            address = body_data.get("address")
-        )
+        # # Create a Teacher Object from Teacher class with body response data
+        # new_teacher = Teacher(
+        #     name = body_data.get("name"),
+        #     department = body_data.get("department"),
+        #     address = body_data.get("address")
+        # )
+
+        new_teacher = teacher_schema.load(
+            body_data,
+            session = db.session
+            )
 
         # Add the new teacher data to the session
         db.session.add(new_teacher)
@@ -72,6 +78,8 @@ def create_a_teacher():
 
         # Return
         return jsonify(teacher_schema.dump(new_teacher)), 201
+    except ValidationError as err:
+        return err.messages, 400
     except IntegrityError as err:
         if err.orig.pgcode == errorcodes.NOT_NULL_VIOLATION:
             return {"message": f"Required field {err.orig.diag.column_name} cannot be null."}, 400
@@ -102,22 +110,45 @@ def delete_teacher(teacher_id):
 # UPDATE /teachers/id
 @teacher_bp.route("/<int:teacher_id>", methods=["PUT", "PATCH"])
 def update_teacher(teacher_id):
-    # Get the teacher with id
     stmt = db.select(Teacher).where(Teacher.id == teacher_id)
     teacher = db.session.scalar(stmt)
-    # if exists
-    if teacher:
-        # get the data to be updated
-        body_data = request.get_json()
-        # make changes
-        teacher.name = body_data.get("name") or teacher.name
-        teacher.department = body_data.get("department") or teacher.department
-        teacher.address = body_data.get("address") or teacher.address
-        # commit
-        db.session.commit()
-        # return
-        return jsonify(teacher_schema.dump(teacher))
-    # else
-    else:
-        # return with an error message
+
+    if not teacher:
         return {"message": f"Teacher with id {teacher_id} does not exist."}, 404
+
+    try:
+        body_data = request.get_json()
+        teacher = teacher_schema.load(
+            body_data,
+            instance = teacher,
+            session = db.session,
+            partial = True
+        )
+        return jsonify(teacher_schema.dump(teacher))
+    
+    except ValidationError as err:
+        return err.messages, 400
+    
+    except IntegrityError as err:
+        return {"message": "Integrity constraint failed. Possibly a duplicate or null value."}, 400
+
+
+    # Get the teacher with id
+    # stmt = db.select(Teacher).where(Teacher.id == teacher_id)
+    # teacher = db.session.scalar(stmt)
+    # # if exists
+    # if teacher:
+    #     # get the data to be updated
+    #     body_data = request.get_json()
+    #     # make changes
+    #     teacher.name = body_data.get("name") or teacher.name
+    #     teacher.department = body_data.get("department") or teacher.department
+    #     teacher.address = body_data.get("address") or teacher.address
+    #     # commit
+    #     db.session.commit()
+    #     # return
+    #     return jsonify(teacher_schema.dump(teacher))
+    # # else
+    # else:
+    #     # return with an error message
+    #     return {"message": f"Teacher with id {teacher_id} does not exist."}, 404
